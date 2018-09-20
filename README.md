@@ -46,6 +46,7 @@ Then I am creating the random effects for the intercept and time, because each p
 I am also creating a slope for the interaction effect between time and intervention, which is also .25
 ```{r}
 powerMatt = function(){
+library(lmerTest)
 n = 90+78+68
 timepoints = 2
 time = timepoints-1
@@ -57,14 +58,14 @@ intervention = rep(intervention, each = timepoints)
 intervention2 = ifelse(intervention == 1, 1, 0)
 intervention3 = ifelse(intervention == 2,1,0)
 
-intercept = 1
+intercept = 0
 slopeT = .25
 slopeI2 = .25
 slopeI3 = .25
 slopeTI2 = .25
 slopeTI3 = .25
 
-randomEffectsCorr = matrix(c(.5,.2,.2, .5), ncol = 2)
+randomEffectsCorr = matrix(c(1,.2,.2, 1), ncol = 2)
 randomEffectsCorr
 
 randomEffects = mvrnonnorm(n, mu = c(0,0), Sigma = randomEffectsCorr, empirical = TRUE)
@@ -76,24 +77,25 @@ dim(randomEffects)
 sigma = .05
 y1 = (intercept + randomEffects$Int[subject])+(slopeT + randomEffects$SlopeT[subject])*time + slopeI2*intervention2 + slopeI3*intervention3 + slopeTI2*time*intervention2+ slopeTI3*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
 d = data.frame(subject, time, intervention, y1)
+
 d$intervention = as.factor(d$intervention)
 model1 = lmer(y1 ~ time*intervention + (1|subject), data = d)
 model1 = summary(model1)
-t_values =  model1$coefficients[,3]
-t_values
+p_values =  model1$coefficients[,5]
+p_values
 }
 ```
 Now run this function 10 time first to see if it works and try to see how many times the t-values is above 2
 For RAS I want greater than two, because we are expecting a bigger increase.  If this fails can try it the other way
 ```{r}
-reps = 1000
-t_valuesPower = replicate(reps, powerMatt()) 
-t_valuesT = as.data.frame(t(abs(t_valuesPower))) 
-t_valuesOnes = as.data.frame(apply(t_valuesT, 2, function(x){ifelse(x >= 2, 1, 0)}))
-t_valuesSum = as.data.frame(apply(t_valuesOnes, 2, sum))
-t_valuesPower = t_valuesSum/reps
-colnames(t_valuesPower) = c("Power")
-t_valuesPower
+reps = 100
+p_values = replicate(reps, powerMatt()) 
+p_values = as.data.frame(t(p_values)) 
+p_values = as.data.frame(apply(p_values, 2, function(x){ifelse(x < .05, 1, 0)}))
+p_values = as.data.frame(apply(p_values, 2, sum))
+p_values = p_values/reps
+colnames(p_values) = c("Power")
+p_values
 ```
 
 
