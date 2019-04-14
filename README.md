@@ -61,11 +61,11 @@ intervention2 = ifelse(intervention == 1, 1, 0)
 intervention3 = ifelse(intervention == 2,1,0)
 
 intercept = 0
-slopeT = .25
-slopeI2 = .25
-slopeI3 = .25
-slopeTI2 = .25
-slopeTI3 = .25
+slopeT = .30
+slopeI2 = .30
+slopeI3 = .30
+slopeTI2 = .30
+slopeTI3 = .30
 
 ran_int = rnorm(n = n, mean = .2, sd = .5)
 
@@ -76,7 +76,7 @@ d = data.frame(subject, time, intervention, y1)
 sd(y1)
 
 d$intervention = as.factor(d$intervention)
-model1 = lmer(y1 ~ time*intervention + (1|subject), data = d)
+model1 = lmer(y1 ~ time*intervention2 + time*intervention3 + (1|subject), data = d)
 model1 = summary(model1)
 p_values =  model1$coefficients[,5]
 p_values
