@@ -49,7 +49,7 @@ With .5 covariance, we are seeing about a 1 sd, which means that .25 is about a 
 ```{r}
 powerMatt = function(){
 library(lmerTest)
-n = 90+78+68
+n = 90+88+78
 timepoints = 2
 time = timepoints-1
 time = rep(0:time, times=n)
@@ -67,17 +67,11 @@ slopeI3 = .25
 slopeTI2 = .25
 slopeTI3 = .25
 
-randomEffectsCorr = matrix(c(.5,.2,.2, .5), ncol = 2)
-randomEffectsCorr
+ran_int = rnorm(n = n, mean = .2, sd = .5)
 
-randomEffects = mvrnonnorm(n, mu = c(0,0), Sigma = randomEffectsCorr, empirical = TRUE)
-randomEffects = data.frame(randomEffects)
-dim(randomEffects)
-colnames(randomEffects) = c("Int", "SlopeT")
-dim(randomEffects)
 
-sigma = .05
-y1 = (intercept + randomEffects$Int[subject])+(slopeT + randomEffects$SlopeT[subject])*time + slopeI2*intervention2 + slopeI3*intervention3 + slopeTI2*time*intervention2+ slopeTI3*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
+sigma = .5
+y1 = (intercept + ran_int[subject])+slopeT*time + slopeI2*intervention2 + slopeI3*intervention3 + slopeTI2*time*intervention2+ slopeTI3*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
 d = data.frame(subject, time, intervention, y1)
 sd(y1)
 
@@ -99,6 +93,11 @@ p_values = as.data.frame(apply(p_values, 2, sum))
 p_values = p_values/reps
 colnames(p_values) = c("Power")
 p_values
+```
+Need to make so we can loop over an effect size
+```{r}
+
+
 ```
 
 
