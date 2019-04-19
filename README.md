@@ -49,7 +49,7 @@ With .5 covariance, we are seeing about a 1 sd, which means that .25 is about a 
 ```{r}
 powerMatt = function(){
 library(lmerTest)
-n = 90+88+78
+n = 97
 timepoints = 2
 time = timepoints-1
 time = rep(0:time, times=n)
@@ -119,10 +119,46 @@ p_values = p_values/reps
 colnames(p_values) = c("Power")
 p_values
 ```
-Need to make so we can loop over an effect size
+Just regular
 ```{r}
+powerMatt = function(){
+library(lmerTest)
+n = 97
+timepoints = 2
+time = timepoints-1
+time = rep(0:time, times=n)
+subject = rep(1:n, each=timepoints)
+treat = c(0,1,2)
+intervention = sample(treat, replace = TRUE, prob = c(.33, .33, .33), n)
+intervention = rep(intervention, each = timepoints)
+intervention2 = ifelse(intervention == 1, 1, 0)
+intervention3 = ifelse(intervention == 2,1,0)
+
+intercept = 0
+effect =  .3
+ran_int = rnorm(n = n, mean = .2, sd = .5)
+sigma = .5
 
 
+
+y = (intercept + ran_int[subject])+effect*time + effect*intervention2 + effect*intervention3 + effect*time*intervention2+ effect*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
+d_out = data.frame(subject = subject, time = time, intervention2 = intervention2, intervention3 = intervention3, y = y)
+
+
+model_out = lmer(y ~ time*intervention2 + time*intervention3 + (1|subject), data = d_out)
+model_out = summary(model_out)
+p_values_out =  model_out$coefficients[,5]
+p_values_out = ifelse(p_values_out < .05, 1, 0)
+p_values_out
+}
+```
+Now rep
+```{r}
+reps = 1000000
+p_values = rep(powerMatt(), reps) 
+p_values = matrix(p_values, nrow = reps, ncol = 6, byrow = TRUE)
+p_values = apply(p_values, 2, sum) / reps
+p_values 
 ```
 
 
