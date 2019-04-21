@@ -61,104 +61,43 @@ intervention2 = ifelse(intervention == 1, 1, 0)
 intervention3 = ifelse(intervention == 2,1,0)
 
 intercept = 0
-effect =  list(.1,.2,.3,.4,.5)
-ran_int = rnorm(n = n, mean = .2, sd = .5)
+slopeT = .50
+slopeI2 = .50
+slopeI3 = .50
+slopeTI2 = .50
+slopeTI3 = .50
+
+ran_int = rnorm(n = n, mean = .2, sd = .4)
+
+
 sigma = .5
-inter_out_2 = list()
-inter_out_3 = list()
-y = list()
-subject_out = list()
-time_out = list()
-d_out = list()
+y1 = (intercept + ran_int[subject])+slopeT*time + slopeI2*intervention2 + slopeI3*intervention3 + slopeTI2*time*intervention2+ slopeTI3*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
+d = data.frame(subject, time, intervention, y1)
+sd(y1)
 
-for(i in 1:length(effect)){
-y[[i]] = (intercept + ran_int[subject])+effect[[i]]*time + effect[[i]]*intervention2 + effect[[i]]*intervention3 + effect[[i]]*time*intervention2+ effect[[i]]*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
-inter_out_2[[i]] = intervention2
-inter_out_3[[i]] = intervention3
-subject_out[[i]] = subject
-time_out[[i]] = time
-d_out[[i]] = data.frame(subject = subject_out[[i]], time = time_out[[i]], intervention2 = inter_out_2[[i]], intervention3 = inter_out_3[[i]], y = y[[i]])
+d$intervention = as.factor(d$intervention)
+model1 = lmer(y1 ~ time*intervention2 + time*intervention3 + (1|subject), data = d)
+model1 = summary(model1)
+p_values =  model1$coefficients[,5]
+p_values
 }
-
-model_out = list()
-p_values_out = list()
-for(i in 1:length(d_out)){
-model_out[[i]] = lmer(y ~ time*intervention2 + time*intervention3 + (1|subject), data = d_out[[i]])
-model_out[[i]] = summary(model_out[[i]])
-p_values_out[[i]] =  model_out[[i]]$coefficients[,5]
-p_values_out[[i]] = ifelse(p_values_out[[i]] < .05, 1, 0)
-}
-p_values_out
-}
-
 ```
 Now run this function 10 time first to see if it works and try to see how many times the t-values is above 2
 For RAS I want greater than two, because we are expecting a bigger increase.  If this fails can try it the other way
-
-The final data set needs to be each variable by
-Intercept 1...length(effect)
-Time 1..length(effect)
-Intervention2 1..length(effect)
-Intervention3 1...length(effect)
-Intervnetion2*time 1:length(effect)
-Intervention3*time 1:length(effect)
-
-So stack each 30 on top of each other
 ```{r}
-reps = 10
-p_values = rep(powerMatt(), reps) 
-p_unlist = unlist(p_values)
-length(p_unlist)
-power_matrix = matrix(p_unlist, ncol = 6*length(effect), nrow =length(p_unlist)/6*length(effect), byrow = TRUE)
-power_matrix
-
-# Figure out how to name them more efficently
-
+reps = 1000
+p_values = replicate(reps, powerMatt()) 
+p_values = as.data.frame(t(p_values)) 
+p_values = as.data.frame(apply(p_values, 2, function(x){ifelse(x < .05, 1, 0)}))
 p_values = as.data.frame(apply(p_values, 2, sum))
 p_values = p_values/reps
 colnames(p_values) = c("Power")
 p_values
 ```
-Just regular
+Need to make so we can loop over an effect size
 ```{r}
-powerMatt = function(){
-library(lmerTest)
-n = 97
-timepoints = 2
-time = timepoints-1
-time = rep(0:time, times=n)
-subject = rep(1:n, each=timepoints)
-treat = c(0,1,2)
-intervention = sample(treat, replace = TRUE, prob = c(.33, .33, .33), n)
-intervention = rep(intervention, each = timepoints)
-intervention2 = ifelse(intervention == 1, 1, 0)
-intervention3 = ifelse(intervention == 2,1,0)
-
-intercept = 0
-effect =  .3
-ran_int = rnorm(n = n, mean = .2, sd = .5)
-sigma = .5
 
 
-
-y = (intercept + ran_int[subject])+effect*time + effect*intervention2 + effect*intervention3 + effect*time*intervention2+ effect*time*intervention3+ rnorm(n*timepoints, mean = 0, sd = sigma)
-d_out = data.frame(subject = subject, time = time, intervention2 = intervention2, intervention3 = intervention3, y = y)
-
-
-model_out = lmer(y ~ time*intervention2 + time*intervention3 + (1|subject), data = d_out)
-model_out = summary(model_out)
-p_values_out =  model_out$coefficients[,5]
-p_values_out = ifelse(p_values_out < .05, 1, 0)
-p_values_out
-}
-```
-Now rep
-```{r}
-reps = 1000000
-p_values = rep(powerMatt(), reps) 
-p_values = matrix(p_values, nrow = reps, ncol = 6, byrow = TRUE)
-p_values = apply(p_values, 2, sum) / reps
-p_values 
 ```
 
 
